@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type RestaurantResponse = { name: string };
+type RestaurantResponse = {
+  name: string;
+  cuisine: string;
+  area: string;
+};
 
 const RATING_LABELS: Record<number, string> = {
   1: "Poor",
@@ -16,7 +20,7 @@ const RATING_LABELS: Record<number, string> = {
 export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
   const router = useRouter();
 
-  const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantResponse | null>(null);
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +30,14 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
     let cancelled = false;
     fetch(`/api/restaurants/${restaurantId}`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: RestaurantResponse | null) => {
-        if (!cancelled && data) setRestaurantName(data.name);
+      .then((data: (RestaurantResponse & { averageRating: number | null; totalReviews: number }) | null) => {
+        if (!cancelled && data) {
+          setRestaurant({
+            name: data.name,
+            cuisine: data.cuisine,
+            area: data.area,
+          });
+        }
       })
       .catch(() => {});
     return () => {
@@ -77,8 +87,15 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
           Write a review
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
-          {restaurantName ?? "Loading..."}
+          {restaurant?.name ?? "Loading..."}
         </h1>
+        {restaurant ? (
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-stone-600">
+            <span className="font-medium text-emerald-700">{restaurant.cuisine}</span>
+            <span className="text-stone-400">·</span>
+            <span>{restaurant.area}</span>
+          </p>
+        ) : null}
         <p className="mt-2 text-sm text-stone-600">
           Your feedback helps others choose where to eat.
         </p>
